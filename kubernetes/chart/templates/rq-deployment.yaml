@@ -48,7 +48,7 @@ spec:
       - name: event-handler
         {{- if .Values.rqVolumes.persistentVolumeClaim.enabled }}
         persistentVolumeClaim:
-	        claimName: {{ .Release.Name }}-{{ .Values.event_handler }}
+	  claimName: {{ .Release.Name }}-{{ .Values.event_handler }}
         {{- else }}
         hostPath:
           Path: C:\Users\Admin\Desktop\tmp
