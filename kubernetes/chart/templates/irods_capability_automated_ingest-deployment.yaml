@@ -5,36 +5,44 @@ metadata:
   labels:
     app: {{ .Release.Name }}-irods-capability-automated-ingest
 spec:
-  replicas: 3
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
   selector:
     matchLabels:
-      app: {{ .Release.Name }}-irods-capability-automated-ingest
+      app: {{ .Release.Name }}-{{ .Values.container.capabilityIngest }}
   template:
     metadata:
       labels:
-        app: {{ .Release.Name }}-irods-capability-automated-ingest
+        app: {{ .Release.Name }}-{{ .Values.container.capabilityIngest }}
     spec:
       containers:
-      - name: irods-capability-automated-ingest
-        image: {{ .Values.docker.repo }}/irods_capability_automated_ingest:0.1.0
+      - name: {{ .Values.container.capabilityIngest }}
+        image: {{ .Values.docker.repo }}/{{ .Values.docker.repoTag }}
         ports:
-        - containerPort: 5000
+        - containerPort: {{ .Values.container.capabilityIngestContainerPort }}
+        {{- if .Values.environment }}
         env:
-        - name: redis_host
-          value: {{ .Release.Name }}-redis-master
-        - name: FLASK_APP
-          value: irods_capability_automated_ingest.flask_app
-        - name: PYTHONPATH
-          value: /event_handler
-        - name: log_level
-          value: {{ quote .Values.log_level }}
+        - name: {{ .Values.environment.name }}
+          value: {{ .Release.Name }}-{{ .Values.environment.redis_tag }}
+        {{- range $key, $value := .Values.environment.variables }}
+        - name: {{ $key }}
+          value: {{ $value }}
+        {{- end }}
+        {{- end }}
+        {{- if .Values.volumeMounts.enabled }}
         volumeMounts:
-        - name: event-handler
-          mountPath: /event_handler
-        command: ["flask"]
-        args: ["run_app", "--host=0.0.0.0", "--event_handler_path=/event_handler"]
+          {{- toYaml .Values.volumeMounts.variables | nindent 10 }}
+        {{- end }}
+        command: ["sh","flask"]
+        args: ["run_app","--host=0.0.0.0", "--event_handler_path=/event_handler"]
       volumes:
-      - name: event-handler
+      - name: event_handler
+        {{- if .Values.volumes.persistentVolumeClaim.enabled }}
       	persistentVolumeClaim:
-	  claimName: {{ .Release.Name }}-{{ .Values.event_handler }}
+	        claimName: {{ .Release.Name }}-{{ .Values.event_handler }}
+        {{- else }}
+        hostPath:
+          path: C:\Users\Admin\Desktop\tmp
+        {{- end }}
 	  

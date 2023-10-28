@@ -2,6 +2,13 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
+replicaCount: 3
+
+container:
+  capabilityIngest: irods_capability_automated_ingest
+  capabilityIngestContainerPort: 5000
+
+
 IRODS_HOST: irods-irods-service
 IRODS_PORT: 1247
 IRODS_USER_NAME: rods
@@ -12,8 +19,92 @@ data: data
 log_level: WARN
 docker:
   repo: zooh
+  repoTag: irods_capability_automated_ingest:0.1.0
 redis:
   master:
     persistence:
       enabled: false
   usePassword: false
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+environment:
+  name: redis_host
+  redis_tag: redis-master
+  variables:
+    FLASK_APP:  irods_capability_automated_ingest.flask_app
+    PYTHONPATH: /event_handler
+    log_level: '"WARN"'
+
+volumeMounts:
+  enabled: true
+  variables:
+  - name: event_handler
+    mountPath: /event_handler
+
+volumes:
+  persistentVolumeClaim:
+    enabled: false
+
+spec:
+  resources:
+    requests:
+      storage: 1Gi
+  accessModes:
+    - ReadOnlyMany
+
+service:
+  enabled: true 
+  type: NodePort
+  ports:
+  - protocol: TCP
+    port: 5000
+    targetPort: 5000
+
+ingress:
+  enabled: true 
+  tag: irods-capability-automated-ingest-ingress
+  serviceTag: irods-capability-automated-ingest-ingress-service
+  servicePort: 5000
+
+# RQ deployment values
+rqReplicaCount: 3
+appLabel: app
+rqContainer:
+  name: irods-rq
+  imageTag: irods_rq:0.1.0
+
+rqEnvironment:
+  name: IRODS_PASSWORD
+  secretName: passwd
+  key: irods 
+  variables:
+    IRODS_HOST: '"irods-irods-service"'
+    IRODS_PORT: '"1247"'
+    IRODS_USER_NAME: '"rods"'
+    IRODS_ZONE_NAME: '"tempZone"'
+    PYTHONPATH: /event_handler
+
+rqVolumeMounts:
+  enabled: true
+  variables:
+  - name: event_handler
+    mountPath: /event_handler
+  - name: data
+    mountPath: /data 
+
+rqVolumes:
+  persistentVolumeClaim:
+    enabled: false
+
+# rq-scheduler section
+rqScheduler: rq-scheduler 
+rqSchedulerReplicaCount: 1
+
+schedulerContainer:
+  name: irods-rq-scheduler

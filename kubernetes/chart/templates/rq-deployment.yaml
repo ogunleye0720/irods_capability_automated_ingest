@@ -3,47 +3,53 @@ kind: Deployment
 metadata:
   name: {{ .Release.Name }}-rq-deployment
   labels:
-    app: rq
+    app: {{ .Values.appLabel }}
 spec:
-  replicas: 3
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.rqReplicaCount | default 3 }}
+  {{- end }}
   selector:
     matchLabels:
-      app: rq
+      app: {{ .Values.appLabel }}
   template:
     metadata:
       labels:
-        app: rq
+        app: {{ .Values.appLabel }}
     spec:
       containers:
-      - name: irods-rq
-        image: {{ .Values.docker.repo }}/irods_rq:0.1.0
+      - name: {{ .Values.rqContainer.name }}
+        image: {{ .Values.docker.repo }}/{{ .Values.rqContainer.imageTag }}
+        {{- if .Values.rqEnvironment }}
         env:
-        - name: IRODS_HOST
-          value: {{ quote .Values.IRODS_HOST }}
-        - name: IRODS_PORT
-          value: "{{ .Values.IRODS_PORT }}"
-        - name: IRODS_USER_NAME
-          value: {{ quote .Values.IRODS_USER_NAME }}
-        - name: IRODS_ZONE_NAME
-          value: {{ quote .Values.IRODS_ZONE_NAME }}
-        - name: IRODS_PASSWORD
+        {{- range $key, $value := .Values.rqEnvironment.variables }}
+        - name: {{ $key }}
+          value: {{ $value }}
+        {{- end }}
+        - name: {{ .Values.rqEnvironment.name }}
           valueFrom:
             secretKeyRef:
-              name: passwd
-              key: irods
-        - name: PYTHONPATH
-          value: /event_handler
+              name: {{ .Values.rqEnvironment.secretName }}
+              key: {{ .Values.rqEnvironment.key }}
+        {{- end }}
+        {{- if .Values.rqVolumeMounts.enabled }}
         volumeMounts:
-        - name: data
-          mountPath: /data
-        - name: event-handler
-          mountPath: /event_handler
+          {{- toYaml .Values.rqVolumeMounts.variables | nindent 10 }}
+        {{- end }}
         args: ["-u", "redis://{{ .Release.Name }}-redis-master:6379/0"]
       volumes:
       - name: data
+        {{- if .Values.rqVolumes.persistentVolumeClaim.enabled }}
         persistentVolumeClaim:
-	  claimName: {{ .Values.data }}
+          claimName: {{ .Values.data }}
+        {{- else }}
+        hostPath:
+          Path: C:\Users\Admin\Desktop\tmp\data
+        {{- end }}
       - name: event-handler
+        {{- if .Values.rqVolumes.persistentVolumeClaim.enabled }}
         persistentVolumeClaim:
-	  claimName: {{ .Release.Name }}-{{ .Values.event_handler }}
-
+	        claimName: {{ .Release.Name }}-{{ .Values.event_handler }}
+        {{- else }}
+        hostPath:
+          Path: C:\Users\Admin\Desktop\tmp
+        {{- end }}

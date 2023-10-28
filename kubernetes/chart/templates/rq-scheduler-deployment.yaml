@@ -3,19 +3,19 @@ kind: Deployment
 metadata:
   name: {{ .Release.Name }}-rq-scheduler-deployment
   labels:
-    app: rq-scheduler
+    app: {{ .Values.rqScheduler }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.rqSchedulerReplicaCount | default 1 }}
   selector:
     matchLabels:
-      app: rq-scheduler
+      app: {{ .Values.rqScheduler }}
   template:
     metadata:
       labels:
-        app: rq-scheduler
+        app: {{ .Values.rqScheduler }}
     spec:
       containers:
-      - name: irods-rq-scheduler
+      - name: {{ .Values.schedulerContainer.name }}
         image: {{ .Values.docker.repo }}/irods_rq-scheduler:0.1.0
         args: ["-i","1","--host", "{{ .Release.Name }}-redis-master"]
 

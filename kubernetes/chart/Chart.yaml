@@ -1,5 +1,12 @@
-apiVersion: v1
+apiVersion: v2
 appVersion: "0.1.0"
-description: irods_capability_automated_ingest
+description: irods_capability_automated_ingest helm chart
 name: irods_capability_automated_ingest
 version: 0.1.0
+dependencies:
+- name: redis
+  repository: https://charts.bitnami.com/bitnami
+  version: 6.0.5
+  condition: redis.enabled
+  tags:
+  - redis 
