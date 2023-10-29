@@ -1,7 +1,11 @@
-name: docker-compose
-description: A generated Helm Chart for docker-compose from Skippbox Kompose
+apiVersion: v2
+appVersion: "0.1.0"
+name: postgresql
+description: A generated Helm Chart for postgresql 
 version: 0.0.1
-keywords:
-  - docker-compose
-sources:
-home:
+dependencies:
+  - name: postgresql
+    version: 13.0.0
+    repository: https://charts.bitnami.com/bitnami
+    tags:
+    - postgresql
