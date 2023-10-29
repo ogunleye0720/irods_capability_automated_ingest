@@ -65,7 +65,7 @@ spec:
       - name: data
         {{- if .Values.volumes.persistentVolumeClaim.enabled }}
       	persistentVolumeClaim:
-	        claimName: {{ .Values.data }}
+          claimName: {{ .Values.data }}
         {{- else }}
         hostPath:
           Path: C:\Users\Admin\Desktop\tmp
