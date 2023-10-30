@@ -40,7 +40,7 @@ spec:
       - name: event_handler
         {{- if .Values.volumes.persistentVolumeClaim.enabled }}
       	persistentVolumeClaim:
-	        claimName: {{ .Release.Name }}-{{ .Values.event_handler }}
+	  claimName: {{ .Release.Name }}-{{ .Values.event_handler }}
         {{- else }}
         hostPath:
           path: C:\Users\Admin\Desktop\tmp
